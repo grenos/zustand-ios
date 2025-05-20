@@ -12,5 +12,7 @@ import SwiftUI
 class CatViewModel {
     // THIS MODEL IN STORED IN MEMORY
     let store = CatStore(store: .catsStore)
+    let bearStore = BearStore(store: .bearsStore)
     // WE CAN LOAD MORE STORES HERE
+    
 }

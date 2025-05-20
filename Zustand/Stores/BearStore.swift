@@ -19,7 +19,6 @@ extension Store where Item == Bear {
     )
 }
 
-
 // MARK: MODEL DTO (same job as dto models)
 struct Bear: Identifiable, Equatable, StorableItem {
     var id: String
@@ -29,13 +28,24 @@ struct Bear: Identifiable, Equatable, StorableItem {
 
 
 // MARK: STORE (same job as our view models)
+@Observable
 final class BearStore {
-    // ─── Your live-updating array of bears ───
+    private let store: Store<Bear>
+    
+    // persisted SQL Array
     @ObservationIgnored
     @Stored var bears: [Bear]
     
-    private let store: Store<Bear>
+    // persisted single value
+    @ObservationIgnored
+    @StoredValue(key: "isBearsGood")
+    var isBearsGood = true
     
+    // in memory signle value
+    @ObservationIgnored
+    @KVStored(key: "username", default: "none", store: .shared)
+    var username: String
+            
     init(store: Store<Bear>) {
         self.store = store
         // hook the @Stored property into our boutique store
@@ -44,7 +54,7 @@ final class BearStore {
     }
             
     func addBear(named name: String) async throws {
-        let image = try await getImage()
+//        let image = try await getImage()
         let new = Bear(id: UUID().uuidString, name: name)
         try await store.insert(new)
     }
@@ -61,6 +71,11 @@ final class BearStore {
     
     func removeAll() async throws {
         try await store.removeAll()
+    }
+
+    // optional (if we want to completely remove the key from the memoryDefaults)
+    func removeUsername() {
+        KeyValueStore.shared.remove("username")
     }
 }
 

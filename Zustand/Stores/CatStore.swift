@@ -44,7 +44,7 @@ final class CatStore {
     }
     
     func addCat(named name: String) async throws {
-        let image = try await getImage()
+//        let image = try await getImage()
         let new = Cat(id: UUID().uuidString, name: name)
         try await store.insert(new)
     }

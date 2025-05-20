@@ -17,22 +17,13 @@ struct BearListView: View {
         NavigationView {
             List {
                 ForEach(vm.store.bears) { bear in
+                    Text("nickname: \(vm.store.username)")
                     HStack {
                         Text(bear.name)
                         Spacer()
-//                        if let uiImage = UIImage(data: bear.image.dataRepresentation) {
-//                            Image(uiImage: uiImage)
-//                                .resizable()
-//                                .aspectRatio(contentMode: .fill)
-//                                .frame(width: 50, height: 50)
-//                                .clipShape(Circle())
-//                        } else {
-//                            Image(systemName: "photo")
-//                                .resizable()
-//                                .aspectRatio(contentMode: .fit)
-//                                .frame(width: 50, height: 50)
-//                                .foregroundColor(.gray)
-//                        }
+                    }
+                    .onTapGesture {
+                        vm.store.$isBearsGood.toggle()
                     }
                 }
                 .onDelete { idxSet in
@@ -51,6 +42,9 @@ struct BearListView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Text("Cats (\(vm.catStore.cats.count))")
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Text("is bear good \( vm.store.isBearsGood)")
+                }
                 ToolbarItem(placement: .bottomBar) {
                     HStack {
                         TextField("New bear name", text: $newName)
@@ -59,6 +53,7 @@ struct BearListView: View {
                         Button("Add") {
                             Task {
                                 try? await vm.store.addBear(named: newName)
+                                vm.store.username = newName
                                 newName = ""
                             }
                         }

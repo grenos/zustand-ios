@@ -15,6 +15,7 @@ struct CatListView: View {
         NavigationView {
             List {
                 ForEach(vm.store.cats) { cat in
+                    Text("username: \(vm.bearStore.username)")
                     HStack {
                         Text(cat.name)
                         Spacer()
