@@ -1,6 +1,6 @@
 import SwiftUI
 import SwiftData
-import Observation
+import Foundation
 
 // MARK: - StoreManager Singleton
 @MainActor
@@ -27,9 +27,9 @@ class StoreManager {
 @Model
 final class KeyValueEntry {
     @Attribute(.unique) var key: String
-    var value: String
+    var value: Data
     
-    init(key: String, value: String) {
+    init(key: String, value: Data) {
         self.key = key
         self.value = value
     }
@@ -40,7 +40,7 @@ final class KeyValueEntry {
 final class KeyValueStore {
     let storeManager = StoreManager.shared
     
-    private(set) var cache: [String: String] = [:]
+    private(set) var cache: [String: Data] = [:]
     static let shared = KeyValueStore()
 
     init() {
@@ -62,7 +62,7 @@ final class KeyValueStore {
         }
     }
 
-    private func saveToDisk(_ key: String, value: String) async {
+    private func saveToDisk(_ key: String, value: Data) async {
         guard let ctx = StoreManager.mainContext else {
             fatalError("ModelContext not initialized. Make sure StoreManager.shared is initialized early in app lifecycle.")
         }
@@ -103,14 +103,20 @@ final class KeyValueStore {
         }
     }
 
-    func get(_ key: String) -> String? {
-        cache[key]
+    func get<T: Decodable>(_ key: String) -> T? {
+        guard let data = cache[key] else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
     }
 
-    func set(_ key: String, value: String) {
-        cache[key] = value
-        Task { @MainActor in
-            await saveToDisk(key, value: value)
+    func set<T: Encodable>(_ key: String, value: T) {
+        do {
+            let data = try JSONEncoder().encode(value)
+            cache[key] = data
+            Task { @MainActor in
+                await saveToDisk(key, value: data)
+            }
+        } catch {
+            print("Failed to encode value: \(error)")
         }
     }
 
@@ -122,46 +128,25 @@ final class KeyValueStore {
     }
 }
 
-//// MARK: - Property Wrapper
+// MARK: - Property Wrapper
 @MainActor @propertyWrapper
-struct KVStored<Value> {
+struct CachedValue<Value: Codable> {
     private let key: String
     private let defaultValue: Value
     private let store: KeyValueStore
     
-    init(key: String, default defaultValue: Value, store: KeyValueStore) {
+    init(key: String, default defaultValue: Value, store: KeyValueStore? = nil) {
         self.key = key
         self.defaultValue = defaultValue
-        self.store = store
+        self.store = store ?? .shared
     }
     
     var wrappedValue: Value {
         get {
-            if let value = store.get(key) as? Value {
-                return value
-            }
-            // If we're here, either the key doesn't exist or the value couldn't be cast
-            // Let's check if the key exists at all
-            if store.get(key) != nil {
-                // Key exists but value couldn't be cast - this is an error case
-                print("⚠️ [KVStored] Value for key '\(key)' exists but couldn't be cast to expected type")
-                store.remove(key) // Clean up the invalid value
-            }
-            return defaultValue
+            store.get(key) ?? defaultValue
         }
         nonmutating set {
-            if let newString = newValue as? String {
-                store.set(key, value: newString)
-            } else if let optionalString = newValue as? String? {
-                if let stringValue = optionalString {
-                    store.set(key, value: stringValue)
-                } else {
-                    store.remove(key)
-                }
-            } else {
-                // For non-String types, convert to string representation
-                store.set(key, value: String(describing: newValue))
-            }
+            store.set(key, value: newValue)
         }
     }
     

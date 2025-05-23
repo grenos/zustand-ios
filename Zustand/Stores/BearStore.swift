@@ -8,7 +8,6 @@
 
 import Boutique
 import Bodega
-import Combine
 import SwiftUI
 
 
@@ -28,9 +27,11 @@ struct Bear: Identifiable, Equatable, StorableItem {
 
 
 // MARK: STORE (same job as our view models)
-@Observable
+@MainActor @Observable
 final class BearStore {
     private let store: Store<Bear>
+    
+    let catStore = CatStore(store: .catsStore)
     
     // persisted SQL Array
     @ObservationIgnored
@@ -38,12 +39,12 @@ final class BearStore {
     
     // persisted single value
     @ObservationIgnored
-    @StoredValue(key: "isBearsGood")
-    var isBearsGood = true
+    @StoredValue(key: "isBearsGood", default: true)
+    var isBearsGood
     
     // in memory signle value
     @ObservationIgnored
-    @KVStored(key: "username", default: "none", store: .shared)
+    @CachedValue(key: "username", default: "none")
     var username: String
             
     init(store: Store<Bear>) {
@@ -52,7 +53,11 @@ final class BearStore {
         self._bears = Stored(in: store)
         Task{ await checkEvents() }
     }
-            
+}
+
+
+// MARK: METHODS
+extension BearStore {
     func addBear(named name: String) async throws {
 //        let image = try await getImage()
         let new = Bear(id: UUID().uuidString, name: name)
@@ -80,6 +85,7 @@ final class BearStore {
 }
 
 
+// MARK: NETWORK
 extension BearStore {
     private func getImage() async throws -> RemoteImage {
         let imageURL = URL(string: "https://loremflickr.com/300/300")!
@@ -93,6 +99,7 @@ extension BearStore {
 }
 
 
+// MARK: STORE UTILITIES
 extension BearStore {
     private func checkEvents() async {
         for await event in store.events {

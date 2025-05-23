@@ -7,7 +7,6 @@
 
 import Boutique
 import Bodega
-import Combine
 import SwiftUI
 
 // MARK: CAT STORE IS STORED IN MEMORY WITH THE CUSTOM IMPLEMENTATION OF THE BODEGA STORE
@@ -29,10 +28,15 @@ struct Cat: Identifiable, Equatable, StorableItem {
 }
 
 // MARK: STORE (same job as our view models)
+@MainActor @Observable
 final class CatStore {
-    // ─── Your live-updating array of cats ───
+    
     @ObservationIgnored
     @Stored var cats: [Cat]
+    
+    @ObservationIgnored
+    @CachedValue(key: "isCats", default: false)
+    var isCats: Bool
     
     private let store: Store<Cat>
     
@@ -42,7 +46,10 @@ final class CatStore {
         self._cats = Stored(in: store)
         Task{ await checkEvents() }
     }
-    
+}
+
+// MARK: METHODS
+extension CatStore {
     func addCat(named name: String) async throws {
 //        let image = try await getImage()
         let new = Cat(id: UUID().uuidString, name: name)
@@ -65,6 +72,7 @@ final class CatStore {
 }
 
 
+// MARK: NETWORK
 extension CatStore {
     private func getImage() async throws -> RemoteImage {
         let imageURL = URL(string: "https://loremflickr.com/300/300")!
@@ -78,6 +86,7 @@ extension CatStore {
 }
 
 
+// MARK: STORE UTILITIES
 extension CatStore {
     private func checkEvents() async {
         for await event in store.events {

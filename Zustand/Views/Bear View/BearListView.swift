@@ -18,6 +18,7 @@ struct BearListView: View {
             List {
                 ForEach(vm.store.bears) { bear in
                     Text("nickname: \(vm.store.username)")
+                    Text("cats from bear store: \(vm.store.catStore.cats.count)")
                     HStack {
                         Text(bear.name)
                         Spacer()

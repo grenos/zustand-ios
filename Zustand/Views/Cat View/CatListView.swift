@@ -16,8 +16,13 @@ struct CatListView: View {
             List {
                 ForEach(vm.store.cats) { cat in
                     Text("username: \(vm.bearStore.username)")
+                  
                     HStack {
                         Text(cat.name)
+                            .foregroundStyle(vm.store.isCats ? .teal : .red)
+                            .onTapGesture {
+                                vm.store.isCats.toggle()
+                            }
                         Spacer()
 //                        if let uiImage = UIImage(data: cat.image.dataRepresentation) {
 //                            Image(uiImage: uiImage)
