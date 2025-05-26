@@ -13,5 +13,6 @@ import Boutique
 class BearViewModel {
     let store = BearStore(store: .bearsStore)
     let catStore = CatStore(store: .catsStore)
+
     // WE CAN LOAD MORE STORES HERE
 }

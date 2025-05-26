@@ -28,13 +28,11 @@ struct Cat: Identifiable, Equatable, StorableItem {
 }
 
 // MARK: STORE (same job as our view models)
-@MainActor @Observable
+@MainActor
 final class CatStore {
     
-    @ObservationIgnored
     @Stored var cats: [Cat]
     
-    @ObservationIgnored
     @CachedValue(key: "isCats", default: false)
     var isCats: Bool
     
